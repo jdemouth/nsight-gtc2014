@@ -7,9 +7,9 @@ Build on Windows
 ----------------
 To build on Windows you need Visual Studio 2012 and CUDA 6.0. There is a Configuration for each step. So:
 
-1- Select the configuration 
-2- Build
-3- Run
+    1- Select the configuration 
+    2- Build
+    3- Run
 
 You can build all the Configurations at once using BUILD > Batch Build...
 
