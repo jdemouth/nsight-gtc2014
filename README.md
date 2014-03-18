@@ -17,7 +17,7 @@ Build on Linux
 --------------
 To build on Linux you need CUDA 6.0. There is a Makefile and a rule "step-XX" for each step. You can build all steps at once:
 
-make -j4
+    make -j4
 
 To run the code, simply launch ./nsight-gtc2014-XX where XX is the step.
 
@@ -27,11 +27,11 @@ The executables all expect an input image. We have copied the claw.ppm image use
 
 To run the code on Windows from the command-line, type:
 
-x64\Step-00\nsight-gtc2014.exe data\claw.ppm
+    x64\Step-00\nsight-gtc2014.exe data\claw.ppm
 
 To run the code on Linux, type:
 
-./nsight-gtc2014-00 data/claw.ppm
+    ./nsight-gtc2014-00 data/claw.ppm
 
 Build the OpenGL version
 ------------------------
@@ -39,6 +39,6 @@ As you may have seen the code contains everything to visualize the images. To bu
 
 To build a step with the OpenGL support simply copy the following line to a Visual Studio Command Line:
 
-  nvcc -O3 -arch=sm_35 -I"%PROGRAMDATA%\NVIDIA Corporation\CUDA Samples\v6.0\common\inc" -DOPTIMIZATION_STEP=0x50 -DWITH_OPENGL -o nsight-gtc2014.exe nsight-gtc2014.cu "%PROGRAMDATA%\NVIDIA Corporation\CUDA Samples\v6.0\common\lib\x64\freeglut.lib" "%PROGRAMDATA%\NVIDIA Corporation\CUDA Samples\v6.0\common\lib\x64\glew64.lib"
+    nvcc -O3 -arch=sm_35 -I"%PROGRAMDATA%\NVIDIA Corporation\CUDA Samples\v6.0\common\inc" -DOPTIMIZATION_STEP=0x50 -DWITH_OPENGL -o nsight-gtc2014.exe nsight-gtc2014.cu "%PROGRAMDATA%\NVIDIA Corporation\CUDA Samples\v6.0\common\lib\x64\freeglut.lib" "%PROGRAMDATA%\NVIDIA Corporation\CUDA Samples\v6.0\common\lib\x64\glew64.lib"
 
-You may want to change the target architecture (-arch) or the optimization step (-DOPTIMIZATION_STEP).
+You may want to change the target architecture (-arch) or the optimization step (-DOPTIMIZATION_STEP). Of course, on Windows, you'll have to copy the FreeGlut and GLEW DLLs from "%PROGRAMDATA%\NVIDIA Corporation\CUDA Samples\v6.0\common\bin\x64" to the folder where you are executing the code.
