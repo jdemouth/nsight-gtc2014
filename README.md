@@ -32,3 +32,12 @@ x64\Step-00\nsight-gtc2014.exe data\claw.ppm
 To run the code on Linux, type:
 
 ./nsight-gtc2014-00 data/claw.ppm
+
+Build the OpenGL version
+------------------------
+As you may have seen the code contains everything to visualize the images. To build with the OpenGL support, I assume you have the CUDA SDK Samples installed on your system. On my Windows, it is installed in %PROGRAMDATA%\NVIDIA Corporation\CUDA Samples\v6.0
+
+To build a step with the OpenGL support simply copy the following line to a Visual Studio Command Line:
+nvcc -O3 -arch=sm_35 -I"%PROGRAMDATA%\NVIDIA Corporation\CUDA Samples\v6.0\common\inc" -DOPTIMIZATION_STEP=0x50 -DWITH_OPENGL -o nsight-gtc2014.exe nsight-gtc2014.cu "%PROGRAMDATA%\NVIDIA Corporation\CUDA Samples\v6.0\common\lib\x64\freeglut.lib" "%PROGRAMDATA%\NVIDIA Corporation\CUDA Samples\v6.0\common\lib\x64\glew64.lib"
+
+You may want to change the target architecture (-arch) or the optimization step (-DOPTIMIZATION_STEP).
