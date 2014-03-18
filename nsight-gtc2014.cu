@@ -24,6 +24,7 @@
 // STEP 0x30: Use launch_bounds to register pressure (improve occupancy) -- It. 2, Visual Studio Ed.
 // STEP 0x40: Use shared memory (improve memory accesses)
 // STEP 0x50: Use read-only path (reduce pressure on Load-store unit)
+// STEP 0x5a: Optimized convolution filter 2D
 // STEP 0x60: Implement a separable filter (reduce arithmetic intensity)
 // STEP 0x70: Process two elements per thread (improve memory efficiency, increase ILP)
 // STEP 0x80: Improve shared memory accesses (reduce bank conflicts)
@@ -297,6 +298,61 @@ __global__ void gaussian_filter_7x7_v3(int w, int h, const uchar *__restrict src
   // Store the result.
   if( in_img(x, y, w, h) )
     dst[y*w + x] = (uchar) (p / 256);
+}
+
+// ====================================================================================================================
+
+__global__ void gaussian_filter_7x7_v3_bis(int w, int h, const uchar *__restrict src, uchar *dst)
+{
+  // Position of the thread in the image.
+  const int x = 1*(blockIdx.x*blockDim.x) + threadIdx.x;
+  const int y = 2*(blockIdx.y*blockDim.y) + threadIdx.y;
+
+  // Shared memory.
+  __shared__ float smem_img[32][40];
+
+  // Pixel to load.
+  const int load_x = blockIdx.x*blockDim.x + 2*threadIdx.x - 4; // -4 for alignment (it should be -3).
+  
+  // Each thread loads 8 pixels.
+  uchar2 p0 = in_img(load_x, y- 3, w, h) ? *reinterpret_cast<const uchar2*>(&src[(y- 3)*w + load_x]) : make_uchar2(0, 0);
+  uchar2 p1 = in_img(load_x, y+ 5, w, h) ? *reinterpret_cast<const uchar2*>(&src[(y+ 5)*w + load_x]) : make_uchar2(0, 0);
+  uchar2 p2 = in_img(load_x, y+13, w, h) ? *reinterpret_cast<const uchar2*>(&src[(y+13)*w + load_x]) : make_uchar2(0, 0);
+  uchar2 p3 = in_img(load_x, y+21, w, h) ? *reinterpret_cast<const uchar2*>(&src[(y+21)*w + load_x]) : make_uchar2(0, 0);
+
+  // Store to shared memory.
+  if( threadIdx.x < 20 )
+  {
+    reinterpret_cast<float2*>(smem_img[threadIdx.y+ 0])[threadIdx.x] = make_float2((float) p0.x, (float) p0.y);
+    reinterpret_cast<float2*>(smem_img[threadIdx.y+ 8])[threadIdx.x] = make_float2((float) p1.x, (float) p1.y);
+    reinterpret_cast<float2*>(smem_img[threadIdx.y+16])[threadIdx.x] = make_float2((float) p2.x, (float) p2.y);
+    reinterpret_cast<float2*>(smem_img[threadIdx.y+24])[threadIdx.x] = make_float2((float) p3.x, (float) p3.y);
+  }
+  __syncthreads();
+
+  // Load the 49 neighbours and myself.
+  float n[8][7];
+  for( int j = 0 ; j <= 7 ; ++j )
+    for( int i = 0 ; i <= 6 ; ++i )
+      n[j][i] = smem_img[2*threadIdx.y+j][threadIdx.x+i];
+
+  // Compute the convolutions.
+  float p[2] = {0.0f};
+  for( int j = 0 ; j < 7 ; ++j )
+    for( int i = 0 ; i < 7 ; ++i )
+    {
+      p[0] += gaussian_filter[j][i] * n[j+0][i];
+      p[1] += gaussian_filter[j][i] * n[j+1][i];
+    }
+
+  // Where to write the result 2*(blockIdx.x*blockDim.x + threadIdx.y).
+  const int write_y = y + threadIdx.y;
+
+  // Write the pixels.
+  if( in_img(x, write_y, w, h) )
+    dst[write_y*w + x] = (uchar) ((int) p[0] >> 8);
+  if( in_img(x, write_y+1, w, h) )
+    dst[(write_y+1)*w + x] = (uchar) ((int) p[1] >> 8);
 }
 
 // ====================================================================================================================
@@ -619,6 +675,9 @@ static void cuda_gaussian_filter(uchar *dst)
     gaussian_filter_7x7_v2<<<grid_dim, block_dim>>>(g_data.img_w, g_data.img_h, grayscale, smoothed_grayscale);
 #elif OPTIMIZATION_STEP == 0x50
     gaussian_filter_7x7_v3<<<grid_dim, block_dim>>>(g_data.img_w, g_data.img_h, grayscale, smoothed_grayscale);
+#elif OPTIMIZATION_STEP == 0x5a
+    dim3 grid_dim0(grid_dim.x, grid_dim.y/2);
+    gaussian_filter_7x7_v3_bis<<<grid_dim0, block_dim>>>(g_data.img_w, g_data.img_h, grayscale, smoothed_grayscale);
 #elif OPTIMIZATION_STEP == 0x60
     gaussian_filter_7x7_v4<<<grid_dim, block_dim>>>(g_data.img_w, g_data.img_h, grayscale, smoothed_grayscale);
 #elif OPTIMIZATION_STEP == 0x70
