@@ -13,6 +13,12 @@ To build on Windows you need Visual Studio 2012 and CUDA 6.0. There is a Configu
 
 You can build all the Configurations at once using BUILD > Batch Build...
 
+Also, even if I don't provide Visual Studio 2008 or 2010 projects, you can easily build the step with NVCC from the command line:
+
+    nvcc -O3 -arch=sm_35 -DOPTIMIZATION_STEP=0x50 -o nsight-gtc2014.exe nsight-gtc2014.cu
+    
+That command will build the optimization step 5. Replace 0x50 by another value 0xXX to build another step.
+
 Build on Linux
 --------------
 To build on Linux you need CUDA 6.0. There is a Makefile and a rule "step-XX" for each step. You can build all steps at once:
